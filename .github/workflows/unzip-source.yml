@@ -1,0 +1,33 @@
+name: Unzip source
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract velune-source.zip into repo root
+        run: |
+          set -e
+          mkdir /tmp/x
+          unzip -q velune-source.zip -d /tmp/x
+          n=$(ls -A /tmp/x | wc -l)
+          first=$(ls -A /tmp/x | head -n1)
+          if [ "$n" -eq 1 ] && [ -d "/tmp/x/$first" ]; then
+            src="/tmp/x/$first"
+          else
+            src="/tmp/x"
+          fi
+          rm -rf "$src/.git" "$src/.github"
+          cp -a "$src"/. .
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Extract velune-source.zip into repo" || echo "Nothing to commit"
+          git push
