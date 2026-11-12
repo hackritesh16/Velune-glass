@@ -101,17 +101,18 @@ object NewPipeUtils {
                 if (cipherString == null) throw ParsingException("Could not find format url")
 
                 val params = parseQueryString(cipherString)
-                val obfuscatedSignature = params["s"]
-                    ?: throw ParsingException("Could not parse cipher signature")
-                val signatureParam = params["sp"]
-                    ?: throw ParsingException("Could not parse cipher signature parameter")
                 val url = params["url"]?.let { URLBuilder(it) }
                     ?: throw ParsingException("Could not parse cipher url")
-                url.parameters[signatureParam] =
-                    YoutubeJavaScriptPlayerManager.deobfuscateSignature(
-                        videoId,
-                        obfuscatedSignature
-                    )
+                // Some player responses wrap an already signed URL in cipher without
+                // an 's' parameter. Only invoke signature deobfuscation when 's' exists.
+                params["s"]?.let { obfuscatedSignature ->
+                    val signatureParam = params["sp"] ?: "signature"
+                    url.parameters[signatureParam] =
+                        YoutubeJavaScriptPlayerManager.deobfuscateSignature(
+                            videoId,
+                            obfuscatedSignature
+                        )
+                }
                 url.toString()
             }
 

@@ -335,7 +335,7 @@ object YTPlayerUtils {
             var selectedUrl: String? = null
 
             lastUrlError = null
-            for (candidate in candidates.asSequence().take(6)) {
+            for (candidate in candidates) {
                 if (isLoggedIn && expectedDurationMs != null && isLikelyPreview(candidate, expectedDurationMs)) continue
                 val cacheKey = buildCacheKey(videoId, candidate.itag)
                 val cached = streamUrlCache[cacheKey]
@@ -657,6 +657,19 @@ object YTPlayerUtils {
         client: YouTubeClient? = null,
     ): String? {
         Timber.tag(logTag).i("Finding stream URL for format: ${format.mimeType}, videoId: $videoId")
+        // InnerTube may return an already-resolved HTTPS URL. Avoid invoking the
+        // JavaScript signature parser for such streams: it can fail on newer player
+        // scripts even though the format is immediately playable.
+        format.url?.takeIf { it.startsWith("https://") }?.let { directUrl ->
+            // PoToken is appended inside NewPipeUtils (innertube module).
+            // This direct URL path is already signed and can be used as-is.
+            return if (client != null) {
+                StreamClientUtils.patchClientVersion(directUrl, client.clientVersion)
+            } else {
+                directUrl
+            }
+        }
+
         var url = NewPipeUtils.getStreamUrl(format, videoId, client)
             .onSuccess { Timber.tag(logTag).i("Stream URL obtained successfully") }
             .onFailure {
