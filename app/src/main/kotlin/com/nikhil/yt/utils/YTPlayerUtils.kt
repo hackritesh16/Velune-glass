@@ -661,11 +661,12 @@ object YTPlayerUtils {
         // JavaScript signature parser for such streams: it can fail on newer player
         // scripts even though the format is immediately playable.
         format.url?.takeIf { it.startsWith("https://") }?.let { directUrl ->
-            val resolved = YouTube.appendGvsPoToken(directUrl, client)
+            // PoToken is appended inside NewPipeUtils (innertube module).
+            // This direct URL path is already signed and can be used as-is.
             return if (client != null) {
-                StreamClientUtils.patchClientVersion(resolved, client.clientVersion)
+                StreamClientUtils.patchClientVersion(directUrl, client.clientVersion)
             } else {
-                resolved
+                directUrl
             }
         }
 
