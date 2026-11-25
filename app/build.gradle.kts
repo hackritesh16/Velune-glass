@@ -129,8 +129,10 @@ android {
         checkDependencies = false
     }
 
+    // Disable automatic locale config until a supported-languages resources.properties
+    // file is provided. AGP 9 fails extractSupportedLocales without it.
     androidResources {
-        generateLocaleConfig = true
+        generateLocaleConfig = false
     }
 
     packaging {
